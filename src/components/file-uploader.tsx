@@ -8,6 +8,8 @@ import { useRef, useState } from "react";
 
 export function FileUpload() {
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadResults, setUploadResults] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,10 +23,33 @@ export function FileUpload() {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsUploading(true);
 
-    console.log("Files to upload:", files);
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      console.log("Upload response:", data);
+
+      if (data.results) {
+        setUploadResults(data.results);
+        setFiles([]);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -140,10 +165,60 @@ export function FileUpload() {
         <Button type="button" variant="outline" onClick={triggerFileInput}>
           Add More Files
         </Button>
-        <Button type="submit" disabled={files.length === 0}>
-          Upload {files.length > 0 && `(${files.length})`}
+        <Button type="submit" disabled={files.length === 0 || isUploading}>
+          {isUploading
+            ? "Uploading..."
+            : `Upload ${files.length > 0 ? `(${files.length})` : ""}`}
         </Button>
       </div>
+
+      {uploadResults.length > 0 && (
+        <div className="mt-8 space-y-4">
+          <h3 className="text-lg text-left font-medium">Upload Results</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {uploadResults.map((result, index) => (
+              <Card key={index} className="p-3">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between">
+                    <p className="font-medium">{result.originalName}</p>
+                    {result.error ? (
+                      <span className="text-destructive">Failed</span>
+                    ) : (
+                      <span className="text-green-600">Success</span>
+                    )}
+                  </div>
+
+                  {result.error ? (
+                    <p className="text-sm text-destructive">{result.error}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        {formatFileSize(result.size)}
+                      </p>
+                      <p
+                        className="text-sm text-muted-foreground truncate"
+                        title={result.s3Key}
+                      >
+                        Key: {result.s3Key}
+                      </p>
+                      <div className="mt-2">
+                        <a
+                          href={result.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline"
+                        >
+                          View/Download File
+                        </a>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </form>
   );
 }
