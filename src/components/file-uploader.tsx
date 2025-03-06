@@ -2,12 +2,15 @@ import type React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatFileSize } from "@/lib/utils";
 import { ExternalLink, FileIcon, FileText, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 export function FileUpload() {
   const [files, setFiles] = useState<File[]>([]);
+  const [fileStatus, setFileStatus] = useState<
+    Record<number, { uploading: boolean; error?: string; result?: any }>
+  >({});
   const [uploadResults, setUploadResults] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -23,14 +26,11 @@ export function FileUpload() {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsUploading(true);
+  const uploadSingleFile = async (file: File, index: number): Promise<any> => {
+    setFileStatus((prev) => ({ ...prev, [index]: { uploading: true } }));
 
     const formData = new FormData();
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
+    formData.append("files", file);
 
     try {
       const response = await fetch("/api/upload", {
@@ -39,27 +39,46 @@ export function FileUpload() {
       });
 
       const data = await response.json();
-      console.log("Upload response:", data);
 
-      if (data.results) {
-        setUploadResults(data.results);
-        setFiles([]);
+      if (data.results && data.results.length > 0) {
+        setFileStatus((prev) => ({
+          ...prev,
+          [index]: { uploading: false, result: data.results[0] },
+        }));
+        return data.results[0];
       }
+
+      throw new Error("No results returned");
     } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setIsUploading(false);
+      console.error(`Error uploading file ${file.name}:`, error);
+      setFileStatus((prev) => ({
+        ...prev,
+        [index]: {
+          uploading: false,
+          error: error instanceof Error ? error.message : "Upload failed",
+        },
+      }));
+      return { originalName: file.name, error: "Upload failed" };
     }
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return (
-      Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
-    );
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsUploading(true);
+
+    try {
+      const results = await Promise.all(
+        files.map((file, index) => uploadSingleFile(file, index))
+      );
+
+      setUploadResults(results);
+      setFiles([]);
+      setFileStatus({});
+    } catch (error) {
+      console.error("An error occurred while uploading files:", error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const triggerFileInput = () => {
@@ -108,8 +127,9 @@ export function FileUpload() {
                   <button
                     type="button"
                     onClick={() => handleRemoveFile(index)}
-                    className="absolute top-2 right-2 rounded-full bg-destructive p-1 text-destructive-foreground hover:bg-destructive/90"
+                    className="absolute top-2 right-2 rounded-full bg-destructive p-1 text-destructive-foreground hover:bg-destructive/90 overflow-hidden"
                     aria-label="Remove file"
+                    disabled={fileStatus[index]?.uploading}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -124,7 +144,6 @@ export function FileUpload() {
                             alt={file.name}
                             className="h-full w-full object-cover"
                             onLoad={(e) => {
-                              // Clean up object URL after image loads to avoid memory leaks
                               URL.revokeObjectURL(
                                 (e.target as HTMLImageElement).src
                               );
@@ -154,6 +173,21 @@ export function FileUpload() {
                       <p className="text-sm text-muted-foreground">
                         {file.type || "Unknown type"}
                       </p>
+                      {fileStatus[index]?.uploading && (
+                        <p className="text-xs text-blue-500 mt-1">
+                          Uploading...
+                        </p>
+                      )}
+                      {fileStatus[index]?.error && (
+                        <p className="text-xs text-destructive mt-1">
+                          {fileStatus[index].error}
+                        </p>
+                      )}
+                      {fileStatus[index]?.result && (
+                        <p className="text-xs text-green-500 mt-1">
+                          Upload complete
+                        </p>
+                      )}
                     </div>
                   </div>
                 </Card>
