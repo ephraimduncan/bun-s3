@@ -128,7 +128,6 @@ export function FileUpload() {
                     type="button"
                     onClick={() => handleRemoveFile(index)}
                     className="absolute top-2 right-2 rounded-full bg-destructive p-1 text-destructive-foreground hover:bg-destructive/90 overflow-hidden"
-                    aria-label="Remove file"
                     disabled={fileStatus[index]?.uploading}
                   >
                     <X className="h-4 w-4" />
@@ -162,7 +161,7 @@ export function FileUpload() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
-                        className="text-base font-medium truncate"
+                        className="text-base font-medium truncate max-w-[250px]"
                         title={file.name}
                       >
                         {file.name}
@@ -233,7 +232,7 @@ export function FileUpload() {
                         </div>
                       )}
                       <p
-                        className="font-medium truncate max-w-[200px]"
+                        className="font-medium truncate max-w-[250px]"
                         title={result.originalName}
                       >
                         {result.originalName}
@@ -273,7 +272,7 @@ export function FileUpload() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                         >
-                          View/Download File
+                          View/Download
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </div>
