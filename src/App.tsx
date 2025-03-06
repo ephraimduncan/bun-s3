@@ -1,8 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
-import "../styles/index.css";
 
 import logo from "../public/assets/logo.svg";
 import reactLogo from "../public/assets/react.svg";
+import "../styles/index.css";
+
 import { FileUpload } from "./components/file-uploader";
 
 export function App() {
