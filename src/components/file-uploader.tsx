@@ -3,7 +3,7 @@ import type React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { FileIcon, FileText, X } from "lucide-react";
+import { ExternalLink, FileIcon, FileText, X } from "lucide-react";
 import { useRef, useState } from "react";
 
 export function FileUpload() {
@@ -65,6 +65,8 @@ export function FileUpload() {
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
+
+  console.log("uploadResults", uploadResults);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -177,41 +179,71 @@ export function FileUpload() {
           <h3 className="text-lg text-left font-medium">Upload Results</h3>
           <div className="grid grid-cols-1 gap-4">
             {uploadResults.map((result, index) => (
-              <Card key={index} className="p-3">
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between">
-                    <p className="font-medium">{result.originalName}</p>
-                    {result.error ? (
-                      <span className="text-destructive">Failed</span>
-                    ) : (
-                      <span className="text-green-600">Success</span>
-                    )}
+              <Card
+                key={index}
+                className={cn(
+                  "p-4 border-l-4",
+                  result.error ? "border-l-destructive" : "border-l-green-500"
+                )}
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-1">
+                      {result.error ? (
+                        <div className="rounded-full bg-destructive/10 p-1">
+                          <X className="h-4 w-4 text-destructive" />
+                        </div>
+                      ) : (
+                        <div className="rounded-full bg-green-500/10 p-2">
+                          <FileText className="h-4 w-4 text-green-500" />
+                        </div>
+                      )}
+                      <p
+                        className="font-medium truncate max-w-[200px]"
+                        title={result.originalName}
+                      >
+                        {result.originalName}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-xs font-medium px-2 py-0.5 rounded-full",
+                        result.error
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-green-500/10 text-green-500"
+                      )}
+                    >
+                      {result.error ? "Failed" : "Success"}
+                    </span>
                   </div>
 
                   {result.error ? (
-                    <p className="text-sm text-destructive">{result.error}</p>
+                    <div className="mt-2 p-3 bg-destructive/10 rounded-md text-sm text-destructive">
+                      <p className="font-medium">Error:</p>
+                      <p>{result.error}</p>
+                    </div>
                   ) : (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        {formatFileSize(result.size)}
-                      </p>
-                      <p
-                        className="text-sm text-muted-foreground truncate"
-                        title={result.s3Key}
-                      >
-                        Key: {result.s3Key}
-                      </p>
-                      <div className="mt-2">
+                    <div className="space-y-2 mt-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Size:</span>
+                        <span>{formatFileSize(result.size)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Type:</span>
+                        <span>{result.type || "Unknown"}</span>
+                      </div>
+                      <div className="mt-3">
                         <a
                           href={result.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
+                          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
                         >
                           View/Download File
+                          <ExternalLink className="h-4 w-4" />
                         </a>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </Card>
