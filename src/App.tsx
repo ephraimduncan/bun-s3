@@ -3,10 +3,11 @@ import "../styles/index.css";
 
 import logo from "../public/assets/logo.svg";
 import reactLogo from "../public/assets/react.svg";
+import { FileUpload } from "./components/file-uploader";
 
 export function App() {
   return (
-    <div className="container mx-auto p-8 text-center relative z-10">
+    <div className="flex flex-col items-center justify-center h-screen mx-auto p-8  relative z-10">
       <div className="flex justify-center items-center gap-8 mb-8">
         <img
           src={logo}
@@ -20,13 +21,13 @@ export function App() {
         />
       </div>
 
-      <Card className="bg-card/50 backdrop-blur-sm border-muted">
-        <CardContent className="pt-6">
-          <h1 className="text-5xl font-bold my-4 leading-tight">Bun + S3</h1>
+      <Card className="bg-card/50 w-full max-w-lg backdrop-blur-sm border-muted">
+        <CardContent className="pt-4">
+          <h1 className="text-5xl font-bold my-4 leading-tight text-center">
+            Bun + S3
+          </h1>
 
-          {/* <APITester /> */}
-
-          {/* <FileUploader /> */}
+          <FileUpload />
         </CardContent>
       </Card>
     </div>
